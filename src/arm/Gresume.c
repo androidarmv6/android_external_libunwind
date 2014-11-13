@@ -61,7 +61,28 @@ arm_local_resume (unw_addr_space_t as, unw_cursor_t *cursor, void *arg)
       };
 
       asm __volatile__ (
+#if defined(__thumb__) && !defined(__thumb2__)
+	"add %0, %0, #8\n"
+	"add %0, %0, #8\n"
+	"add %0, %0, #8\n"
+	"ldmia %0!, {r4-r7}\n"
+	"mov r10, r4\n"
+	"mov r11, r5\n"
+	"mov r12, r6\n"
+	"mov lr, r7\n"
+	"sub %0, %0, #8\n"
+	"sub %0, %0, #8\n"
+	"sub %0, %0, #8\n"
+	"sub %0, %0, #8\n"
+	"sub %0, %0, #4\n"
+	"ldr r4, [%0, #16]\n"
+	"ldr r5, [%0, #20]\n"
+	"mov r8, r4\n"
+	"mov r9, r5\n"
+	"ldmia %0!, {r4-r7}\n"
+#else
 	"ldmia %0, {r4-r12, lr}\n"
+#endif
 	"mov sp, r12\n"
 	"bx lr\n"
 	: : "r" (regs),
