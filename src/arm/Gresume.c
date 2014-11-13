@@ -60,12 +60,28 @@ arm_local_resume (unw_addr_space_t as, unw_cursor_t *cursor, void *arg)
 	      char x[sizeof(regs)];
       };
 
+#if defined(__thumb__) && !defined(__thumb2__)
+# define __LIBUNWIND_SWITCH_TO_ARM \
+"adr r3, 5f\n" \
+"bx r3\n" \
+".align\n" \
+".arm\n" \
+"5:\n"
+/* note: the leading \n below is intentional */
+# define __LIBUNWIND_CLOBBERS "r3" /* list of clobbered registers */
+#else
+# define __LIBUNWIND_SWITCH_TO_ARM /* nothing */
+# define __LIBUNWIND_CLOBBERS /* nothing */
+#endif
+
       asm __volatile__ (
+	 __LIBUNWIND_SWITCH_TO_ARM
 	"ldmia %0, {r4-r12, lr}\n"
 	"mov sp, r12\n"
 	"bx lr\n"
 	: : "r" (regs),
 	    "m" (*(struct regs_overlay *)regs)
+	: __LIBUNWIND_CLOBBERS
       );
     }
   else
